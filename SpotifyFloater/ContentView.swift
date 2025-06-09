@@ -35,5 +35,11 @@ struct ContentView: View {
                 .shadow(radius: 10) // Add a subtle shadow
             }
         }
+        .onAppear {
+            // Attempt to refresh token on app launch if a refresh token is stored
+            if UserDefaults.standard.string(forKey: "spotify_refresh_token") != nil {
+                authManager.refreshAccessToken()
+            }
+        }
     }
 }

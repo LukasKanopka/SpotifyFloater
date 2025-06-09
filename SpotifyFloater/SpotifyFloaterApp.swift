@@ -17,6 +17,9 @@ struct SpotifyFloaterApp: App {
                }
                .background(WindowAccessor { window in
                    window?.level = .floating // Set window level to floating
+                   window?.titleVisibility = .hidden
+                   window?.titlebarAppearsTransparent = true
+                   window?.isMovableByWindowBackground = true
                })
        }
        .windowStyle(.hiddenTitleBar)
@@ -34,8 +37,25 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     private var refreshToken: String?
     private var webAuthSession: ASWebAuthenticationSession?
 
+    override init() {
+        super.init()
+        loadAndRefreshToken()
+    }
+
+    // MARK: - Initialization and Token Loading
+
+    private func loadAndRefreshToken() {
+        self.refreshToken = UserDefaults.standard.string(forKey: "spotify_refresh_token")
+        if self.refreshToken != nil {
+            print("Found refresh token in UserDefaults: \(self.refreshToken!). Attempting to refresh.")
+            refreshAccessToken()
+        } else {
+            print("No refresh token found in UserDefaults.")
+        }
+    }
+
     // MARK: - Authentication Flow
-    
+
     func startAuthentication() {
         let scopes = "user-read-playback-state user-modify-playback-state user-library-modify user-library-read" // Added user-library-read scope
         let authURLString = "https://accounts.spotify.com/authorize?response_type=code&client_id=\(clientID)&scope=\(scopes)&redirect_uri=\(redirectURI)"
@@ -93,6 +113,14 @@ class SpotifyAuthManager: NSObject, ObservableObject {
                     self?.accessToken = tokenResponse.access_token
                     self?.refreshToken = tokenResponse.refresh_token
                     self?.isAuthenticated = true
+
+                    // Save refresh token to UserDefaults
+                    if let refreshToken = tokenResponse.refresh_token {
+                        UserDefaults.standard.set(refreshToken, forKey: "spotify_refresh_token")
+                        print("Saved refresh token to UserDefaults.")
+                    } else {
+                        print("No refresh token received to save.")
+                    }
                 }
             } catch {
                 print("Failed to decode token response: \(error)")
@@ -104,8 +132,71 @@ class SpotifyAuthManager: NSObject, ObservableObject {
         accessToken = nil
         refreshToken = nil
         isAuthenticated = false
+        UserDefaults.standard.removeObject(forKey: "spotify_refresh_token")
     }
-    
+
+    func refreshAccessToken() {
+        guard let refreshToken = self.refreshToken else {
+            print("refreshAccessToken: No refresh token available.")
+            return
+        }
+        print("refreshAccessToken: Using refresh token \(refreshToken)")
+
+        let authHeader = "\(clientID):\(clientSecret)".data(using: .utf8)!.base64EncodedString()
+        var request = URLRequest(url: URL(string: "https://accounts.spotify.com/api/token")!)
+
+        request.httpMethod = "POST"
+        request.setValue("Basic \(authHeader)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        var components = URLComponents()
+        components.queryItems = [
+            URLQueryItem(name: "grant_type", value: "refresh_token"),
+            URLQueryItem(name: "refresh_token", value: refreshToken)
+        ]
+        request.httpBody = components.query?.data(using: .utf8)
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let data = data, error == nil else {
+                print("refreshAccessToken: Error refreshing token: \(error?.localizedDescription ?? "Unknown")")
+                // Optionally clear the invalid refresh token
+                UserDefaults.standard.removeObject(forKey: "spotify_refresh_token")
+                self?.refreshToken = nil
+                DispatchQueue.main.async {
+                     self?.isAuthenticated = false
+                     print("refreshAccessToken: Error refreshing token. isAuthenticated is now false.")
+                }
+                return
+            }
+
+            do {
+                let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
+                DispatchQueue.main.async {
+                    self?.accessToken = tokenResponse.access_token
+                    // Spotify might return a new refresh token, update if available
+                    self?.refreshToken = tokenResponse.refresh_token ?? self?.refreshToken
+                    if let newRefreshToken = tokenResponse.refresh_token {
+                         UserDefaults.standard.set(newRefreshToken, forKey: "spotify_refresh_token")
+                         print("refreshAccessToken: Updated and saved new refresh token.")
+                    } else {
+                        print("refreshAccessToken: No new refresh token received.")
+                    }
+                    self?.isAuthenticated = true
+                    print("refreshAccessToken: Successfully refreshed token. isAuthenticated is now true.")
+                }
+            } catch {
+                print("refreshAccessToken: Failed to decode refresh token response: \(error)")
+                 // Optionally clear the invalid refresh token
+                UserDefaults.standard.removeObject(forKey: "spotify_refresh_token")
+                self?.refreshToken = nil
+                 DispatchQueue.main.async {
+                    self?.isAuthenticated = false
+                    print("refreshAccessToken: Failed to refresh token. isAuthenticated is now false.")
+                }
+            }
+        }.resume()
+    }
+
     // MARK: - API Calls
     
     private func makeAPIRequest<T: Decodable>(endpoint: String, method: String, completion: @escaping (Result<T, Error>) -> Void) {
