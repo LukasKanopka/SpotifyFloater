@@ -83,7 +83,6 @@ struct PlayerView: View {
        // --- UI REVAMP: FROSTED GLASS EFFECT ---
        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 50.0))
        // --- END OF UI REVAMP ---
-       .shadow(color: .black.opacity(0.2), radius: 20, y: 5)
        .onAppear(perform: fetchCurrentTrack)
        .onReceive(timer) { _ in
            fetchCurrentTrack()
