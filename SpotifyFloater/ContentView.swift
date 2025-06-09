@@ -1,38 +1,40 @@
 // FILE: ContentView.swift
 // DESCRIPTION: Replace the contents of ContentView.swift with this code.
-//
-import Foundation // Added for potential future use, good practice
-import SwiftUI // Already present, but ensuring it's here
-import Combine // Added for potential future use with ObservableObject
+
+import Foundation
 import SwiftUI
+import Combine
 
 struct ContentView: View {
     @EnvironmentObject var authManager: SpotifyAuthManager
-    
+
     var body: some View {
         Group {
             if authManager.isAuthenticated {
-                // If we are authenticated, show the player UI.
                 PlayerView()
             } else {
-                // If not authenticated, show the login button.
+                // Login View
                 VStack(spacing: 20) {
                     Text("Spotify Hover Player")
                         .font(.largeTitle)
+                        .fontWeight(.bold) // Added for emphasis
+
                     Text("Please log in to continue.")
-                    
+                        .font(.body)
+                        .foregroundColor(.secondary)
+
                     Button("Login with Spotify") {
                         authManager.startAuthentication()
                     }
-                    .padding()
-                    .background(Color(red: 0.11, green: 0.82, blue: 0.33)) // Spotify Green
-                    .foregroundColor(.white)
-                    .cornerRadius(25) // More rounded corners
+                    .buttonStyle(.borderedProminent) // Modern button style
+                    .tint(Color(red: 0.11, green: 0.82, blue: 0.33)) // Spotify Green
+                    .controlSize(.large) // Make the button larger
                 }
-                .frame(width: 360, height: 240) // Scaled up by 20%
-                .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
-                .cornerRadius(25) // Apply corner radius to the container
-                .shadow(radius: 10) // Add a subtle shadow
+                .frame(width: 360, height: 240)
+                // --- UI REVAMP: FROSTED GLASS EFFECT ---
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25.0))
+                // --- END OF UI REVAMP ---
+                .shadow(color: .black.opacity(0.2), radius: 10)
             }
         }
         .onAppear {

@@ -1,6 +1,6 @@
 // FILE: PlayerView.swift
-// DESCRIPTION: Create a new SwiftUI View file named "PlayerView.swift" and add this code.
-//
+// DESCRIPTION: Replace the contents of PlayerView.swift with this code.
+
 import SwiftUI
 
 struct PlayerView: View {
@@ -10,60 +10,56 @@ struct PlayerView: View {
     @State private var currentTrack: Track?
     @State private var albumArt: NSImage?
     @State private var isPlaying: Bool = false
-    @State private var isFavorite: Bool = false // NEW: State to track favorite status
+    @State private var isFavorite: Bool = false
     
     // A timer to periodically fetch the latest track info
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
     var body: some View {
-       HStack(spacing: 15) { // Changed back to HStack for horizontal arrangement
+       HStack(spacing: 12) {
            if let track = currentTrack {
-               // Display the album art on the left, downscaled
+               // Album art
                Image(nsImage: albumArt ?? NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)!)
                    .resizable()
                    .aspectRatio(contentMode: .fit)
-                   .frame(width: 72, height: 72) // Scaled up by 20%
-                   .cornerRadius(4) // Smaller corner radius
-                   .shadow(radius: 3) // Smaller shadow
-               
-               VStack(alignment: .leading, spacing: 5) { // Stack for text and controls
-                   VStack(alignment: .leading) { // Stack for song title and artist
-                       Text(track.name)
-                           .font(.headline) // Song name
-                           .fontWeight(.bold)
-                           .foregroundColor(.white) // Spotify theme text color
-                       Text(track.artistNames)
-                           .font(.caption) // Artist name
-                           .foregroundColor(.gray) // Spotify theme secondary text color
-                   }
+                   .frame(width: 72, height: 72)
+                   .cornerRadius(8)
+                   .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+
+               // Track info and controls
+               VStack(alignment: .leading, spacing: 5) {
+                   Text(track.name)
+                       .font(.headline)
+                       .fontWeight(.bold)
+                       .foregroundColor(.primary)
+                   Text(track.artistNames)
+                       .font(.caption)
+                       .foregroundColor(.secondary)
                    
-                   HStack(spacing: 20) { // Player control buttons
-                       Button(action: { authManager.performPlayerAction(endpoint: .previous) }) {
-                           Image(systemName: "backward.fill")
-                               .foregroundColor(.white) // Spotify theme button color
+                   HStack(spacing: 15) {
+                        // --- BUTTON STYLE REVAMP ---
+                       PlayerButton(systemName: "backward.fill") {
+                           authManager.performPlayerAction(endpoint: .previous)
                        }
                        
-                       Button(action: { isPlaying ? authManager.performPlayerAction(endpoint: .pause) : authManager.performPlayerAction(endpoint: .play) }) {
-                           Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                               .font(.title) // Scaled up by 20%
-                               .foregroundColor(Color(red: 0.11, green: 0.82, blue: 0.33)) // Spotify Green
+                       PlayerButton(systemName: isPlaying ? "pause.fill" : "play.fill", fontSize: .title2) {
+                           isPlaying ? authManager.performPlayerAction(endpoint: .pause) : authManager.performPlayerAction(endpoint: .play)
                        }
                        
-                       Button(action: { authManager.performPlayerAction(endpoint: .next) }) {
-                           Image(systemName: "forward.fill")
-                               .foregroundColor(.white) // Spotify theme button color
+                       PlayerButton(systemName: "forward.fill") {
+                           authManager.performPlayerAction(endpoint: .next)
                        }
                    }
                }
                
-            // Spacer(minLength: -20) // Use a smaller minimum length to reduce default spacing
+               // Spacer()
                
-               // Favorite button
-               Button(action: toggleFavoriteStatus) {
-                   Image(systemName: isFavorite ? "minus.circle.fill" : "plus.circle.fill") // Circular +/- icon
-                       .foregroundColor(isFavorite ? Color(red: 0.11, green: 0.82, blue: 0.33) : .gray) // Spotify Green for favorited (minus), gray otherwise (plus)
+                // --- FAVORITE BUTTON REVAMP (now a heart icon) ---
+               PlayerButton(systemName: isFavorite ? "heart.fill" : "heart", fontSize: .title2) {
+                   toggleFavoriteStatus()
                }
-               .font(.title) // Scaled up by 20%
+               .tint(isFavorite ? .pink : .secondary) // Pink when favorited
+               .animation(.spring(), value: isFavorite)
 
            } else {
                Text("Nothing Playing")
@@ -71,15 +67,15 @@ struct PlayerView: View {
                    .foregroundColor(.secondary)
            }
        }
-       .padding(.horizontal, 20) // Add horizontal padding
-       .padding(.vertical, 10) // Adjusted vertical padding for a slightly shorter pill
-       .frame(width: 360, height: 120) // Scaled up by 20%
-       .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
-       .cornerRadius(50) // Apply corner radius for pill shape
-       .shadow(radius: 20) // Increase shadow radius
-       .clipShape(RoundedRectangle(cornerRadius: 50)) // Clip the shadow to the rounded shape
-       .onAppear(perform: fetchCurrentTrack) // Fetch track when view appears
-       .onReceive(timer) { _ in // And fetch track on a timer
+       .padding(.horizontal, 20)
+       .padding(.vertical, 12)
+       .frame(width: 300, height: 100) // Adjusted height
+       // --- UI REVAMP: FROSTED GLASS EFFECT ---
+       .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 50.0))
+       // --- END OF UI REVAMP ---
+       .shadow(color: .black.opacity(0.2), radius: 20, y: 5)
+       .onAppear(perform: fetchCurrentTrack)
+       .onReceive(timer) { _ in
            fetchCurrentTrack()
        }
    }
@@ -90,25 +86,22 @@ struct PlayerView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    // Only update UI if the track is new
                     if self.currentTrack?.id != response.item?.id {
                         self.currentTrack = response.item
                         if let imageURLString = response.item?.album.images.first?.url,
                            let imageURL = URL(string: imageURLString) {
                             self.fetchAlbumArt(from: imageURL)
                         } else {
-                            self.albumArt = nil // No artwork URL
+                            self.albumArt = nil
                         }
                     }
                     self.isPlaying = response.is_playing
                     
-                    // Always check favorite status in case it changed
                     if let trackId = response.item?.id {
                         self.checkFavoriteStatus(for: trackId)
                     }
                     
                 case .failure(let error):
-                    // Don't clear the view for temporary errors like no active device
                     if let apiError = error as? APIError, case .badResponse(let statusCode) = apiError, statusCode == 403 {
                         print("Playback not active on any device (403).")
                     } else {
@@ -137,21 +130,15 @@ struct PlayerView: View {
         guard let trackId = currentTrack?.id else { return }
         
         if isFavorite {
-            // Currently a favorite, so remove it
             authManager.removeFromFavorites(trackId: trackId) { error in
                 if error == nil {
-                    DispatchQueue.main.async {
-                        self.isFavorite = false // Optimistically update UI
-                    }
+                    DispatchQueue.main.async { self.isFavorite = false }
                 }
             }
         } else {
-            // Not a favorite, so add it
             authManager.addToFavorites(trackId: trackId) { error in
                 if error == nil {
-                    DispatchQueue.main.async {
-                        self.isFavorite = true // Optimistically update UI
-                    }
+                    DispatchQueue.main.async { self.isFavorite = true }
                 }
             }
         }
@@ -171,8 +158,22 @@ struct PlayerView: View {
     }
 }
 
-// FIX: Added a preview provider and injected a sample environment object
-// This resolves the "Ambiguous use of 'init'" error.
+// --- NEW HELPER VIEW FOR PRETTIER BUTTONS ---
+struct PlayerButton: View {
+    let systemName: String
+    var fontSize: Font = .body
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(fontSize)
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.plain) // Removes default button chrome for a cleaner look
+    }
+}
+
 #Preview {
     PlayerView()
         .environmentObject(SpotifyAuthManager())
