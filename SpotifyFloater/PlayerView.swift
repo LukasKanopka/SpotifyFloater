@@ -81,7 +81,7 @@ struct PlayerView: View {
        .padding(.vertical, 12)
        .frame(width: 300, height: 100) // Adjusted height
        // --- UI REVAMP: FROSTED GLASS EFFECT ---
-       .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 50.0))
+       .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 50.0))
        // --- END OF UI REVAMP ---
        .onAppear(perform: fetchCurrentTrack)
        .onReceive(timer) { _ in

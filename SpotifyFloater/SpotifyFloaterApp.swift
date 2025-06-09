@@ -1,59 +1,63 @@
 // FILE: SpotifyFloaterApp.swift
-// DESCRIPTION: Replace the contents of your main app file (e.g., SpotifyFloaterApp.swift) with this.
-//
+// DESCRIPTION: The definitive fix using a simpler style and a modern dismiss action.
+
 import SwiftUI
 import AuthenticationServices
 
 @main
 struct SpotifyFloaterApp: App {
     @StateObject private var authManager = SpotifyAuthManager()
+    @Environment(\.openWindow) var openWindow
+    @Environment(\.dismissWindow) var dismissWindow // Get the modern dismiss action
 
-   var body: some Scene {
-       WindowGroup {
-           ContentView()
+    var body: some Scene {
+        Window("SpotifyFloater", id: "player-window") {
+            ContentView()
                .environmentObject(authManager)
                .onOpenURL { url in
                    authManager.handleRedirect(url: url)
                }
                .background(WindowAccessor { window in
-                   // --- START OF CHANGES ---
                    if let window = window {
-                       window.level = .floating
+                       // A much simpler and more reliable setup
                        window.styleMask = .borderless
-                       window.titleVisibility = .hidden
-                       window.titlebarAppearsTransparent = true
-                       window.isMovableByWindowBackground = true
-
-                       // Make the window background fully transparent
                        window.isOpaque = false
                        window.backgroundColor = .clear
-                       
-                       window.hasShadow = true
-
-//                       // Hide the standard window buttons (close, minimize, zoom)
-//                       window.standardWindowButton(.closeButton)?.isHidden = true
-//                       window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-//                       window.standardWindowButton(.zoomButton)?.isHidden = true
+                       window.isMovableByWindowBackground = true
+                       window.level = .floating
+                       window.invalidateShadow() // Ensure shadow matches the pill shape
                    }
-                   // --- END OF CHANGES ---
                })
-       }
-       .windowStyle(.hiddenTitleBar)
-       .commands {
-           CommandGroup(before: .help) { // Place custom commands before the Help menu
-               Button("Close Window") {
-                   NSApplication.shared.keyWindow?.close()
-               }
-               .keyboardShortcut("w", modifiers: .command)
+        }
+        .windowResizability(.contentSize)
+        // This command modifier is the key to making Command+W work reliably
+        .commands {
+            CommandGroup(replacing: .windowList) { // Or any appropriate placement
+                Button("Close") {
+                    dismissWindow(id: "player-window")
+                }
+                .keyboardShortcut("w", modifiers: .command)
+            }
+        }
 
-               Button("Quit SpotifyFloater") {
-                   NSApplication.shared.terminate(nil)
-               }
-               .keyboardShortcut("q", modifiers: .command)
-           }
-       }
-   }
+        MenuBarExtra("SpotifyFloater", systemImage: "music.note") {
+            Button("Show Player") {
+                openWindow(id: "player-window")
+            }
+
+            Divider()
+
+            Button("Quit SpotifyFloater") {
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q", modifiers: .command)
+        }
+    }
 }
+
+
+// NOTE: The rest of this file (SpotifyAuthManager, helpers, etc.) remains exactly the same.
+// No changes are needed below this line.
 
 class SpotifyAuthManager: NSObject, ObservableObject {
     private let clientID = "396d1e665262492eb3159f12423ae8a1" // IMPORTANT: Replace
@@ -62,7 +66,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
 
     @Published var isAuthenticated = false
     @Published var accessToken: String?
-    
+
     private var refreshToken: String?
     private var webAuthSession: ASWebAuthenticationSession?
 
@@ -70,7 +74,9 @@ class SpotifyAuthManager: NSObject, ObservableObject {
         super.init()
         loadAndRefreshToken()
     }
-
+    
+    // ... (The rest of the SpotifyAuthManager code is unchanged)
+    
     // MARK: - Initialization and Token Loading
 
     private func loadAndRefreshToken() {
@@ -88,12 +94,12 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     func startAuthentication() {
         let scopes = "user-read-playback-state user-modify-playback-state user-library-modify user-library-read" // Added user-library-read scope
         let authURLString = "https://accounts.spotify.com/authorize?client_id=\(clientID)&response_type=code&redirect_uri=\(redirectURI)&scope=\(scopes)"
-        
+
         guard let authURL = URL(string: authURLString) else {
             print("Error: Invalid authorization URL")
             return
         }
-        
+
         self.webAuthSession = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "spotifycontroller") { [weak self] callbackURL, error in
             guard let callbackURL = callbackURL, error == nil else {
                 print("Authentication session failed with error: \(error?.localizedDescription ?? "Unknown error")")
@@ -101,11 +107,11 @@ class SpotifyAuthManager: NSObject, ObservableObject {
             }
             self?.handleRedirect(url: callbackURL)
         }
-        
+
         webAuthSession?.presentationContextProvider = self
         webAuthSession?.start()
     }
-    
+
     func handleRedirect(url: URL) {
         guard let code = URLComponents(url: url, resolvingAgainstBaseURL: true)?.queryItems?.first(where: { $0.name == "code" })?.value else {
             print("Invalid callback URL. Could not find authorization code.")
@@ -117,7 +123,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     private func exchangeCodeForTokens(code: String) {
         let authHeader = "\(clientID):\(clientSecret)".data(using: .utf8)!.base64EncodedString()
         var request = URLRequest(url: URL(string: "https://accounts.spotify.com/api/token")!)
-        
+
         request.httpMethod = "POST"
         request.setValue("Basic \(authHeader)", forHTTPHeaderField: "Authorization")
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -135,7 +141,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
                 print("Error exchanging token: \(error?.localizedDescription ?? "Unknown")")
                 return
             }
-            
+
             do {
                 let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
                 DispatchQueue.main.async {
@@ -156,7 +162,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
             }
         }.resume()
     }
-    
+
     func logOut() {
         accessToken = nil
         refreshToken = nil
@@ -227,28 +233,28 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     }
 
     // MARK: - API Calls
-    
+
     private func makeAPIRequest<T: Decodable>(endpoint: String, method: String, completion: @escaping (Result<T, Error>) -> Void) {
         guard let token = accessToken else {
             completion(.failure(APIError.notAuthenticated))
             return
         }
-        
+
         guard let url = URL(string: "https://api.spotify.com\(endpoint)") else {
             completion(.failure(APIError.invalidURL))
             return
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
+
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
                 completion(.failure(APIError.badResponse(statusCode: 500)))
                 return
@@ -258,12 +264,12 @@ class SpotifyAuthManager: NSObject, ObservableObject {
                 completion(.failure(APIError.badResponse(statusCode: httpResponse.statusCode)))
                 return
             }
-            
+
             guard let data = data, !data.isEmpty else {
                 completion(.failure(APIError.noData))
                 return
             }
-            
+
             do {
                 let decodedObject = try JSONDecoder().decode(T.self, from: data)
                 completion(.success(decodedObject))
@@ -272,7 +278,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
             }
         }.resume()
     }
-    
+
     private func makeAPICallWithoutDecoding(endpoint: String, method: String, completion: @escaping (Error?) -> Void) {
         guard let token = accessToken else {
             completion(APIError.notAuthenticated)
@@ -282,11 +288,11 @@ class SpotifyAuthManager: NSObject, ObservableObject {
             completion(APIError.invalidURL)
             return
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
+
         URLSession.shared.dataTask(with: request) { _, response, error in
             if let error = error {
                 print("API Error for \(endpoint): \(error.localizedDescription)")
@@ -320,11 +326,11 @@ class SpotifyAuthManager: NSObject, ObservableObject {
     func getCurrentTrack(completion: @escaping (Result<SpotifyTrackResponse, Error>) -> Void) {
         makeAPIRequest(endpoint: "/v1/me/player/currently-playing", method: "GET", completion: completion)
     }
-    
+
     func addToFavorites(trackId: String, completion: @escaping (Error?) -> Void) {
         makeAPICallWithoutDecoding(endpoint: "/v1/me/tracks?ids=\(trackId)", method: "PUT", completion: completion)
     }
-    
+
     func removeFromFavorites(trackId: String, completion: @escaping (Error?) -> Void) {
         makeAPICallWithoutDecoding(endpoint: "/v1/me/tracks?ids=\(trackId)", method: "DELETE", completion: completion)
     }
