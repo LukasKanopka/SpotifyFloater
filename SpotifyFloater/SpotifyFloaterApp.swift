@@ -16,10 +16,26 @@ struct SpotifyFloaterApp: App {
                    authManager.handleRedirect(url: url)
                }
                .background(WindowAccessor { window in
-                   window?.level = .floating // Set window level to floating
-                   window?.titleVisibility = .hidden
-                   window?.titlebarAppearsTransparent = true
-                   window?.isMovableByWindowBackground = true
+                   // --- START OF CHANGES ---
+                   if let window = window {
+                       window.level = .floating
+                       window.styleMask = .borderless
+                       window.titleVisibility = .hidden
+                       window.titlebarAppearsTransparent = true
+                       window.isMovableByWindowBackground = true
+
+                       // Make the window background fully transparent
+                       window.isOpaque = false
+                       window.backgroundColor = .clear
+                       
+                       window.hasShadow = true
+
+//                       // Hide the standard window buttons (close, minimize, zoom)
+//                       window.standardWindowButton(.closeButton)?.isHidden = true
+//                       window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+//                       window.standardWindowButton(.zoomButton)?.isHidden = true
+                   }
+                   // --- END OF CHANGES ---
                })
        }
        .windowStyle(.hiddenTitleBar)
@@ -58,7 +74,7 @@ class SpotifyAuthManager: NSObject, ObservableObject {
 
     func startAuthentication() {
         let scopes = "user-read-playback-state user-modify-playback-state user-library-modify user-library-read" // Added user-library-read scope
-        let authURLString = "https://accounts.spotify.com/authorize?response_type=code&client_id=\(clientID)&scope=\(scopes)&redirect_uri=\(redirectURI)"
+        let authURLString = "https://accounts.spotify.com/authorize?client_id=\(clientID)&response_type=code&redirect_uri=\(redirectURI)&scope=\(scopes)"
         
         guard let authURL = URL(string: authURLString) else {
             print("Error: Invalid authorization URL")
