@@ -29,9 +29,22 @@
 		3BB49FEA2DF6902700432B57 /* SpotifyFloaterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpotifyFloaterUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3BB49FFE2DF690DE00432B57 /* Exceptions for "SpotifyFloater" folder in "SpotifyFloater" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3BB49FD12DF6902600432B57 /* SpotifyFloater */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3BB49FD42DF6902600432B57 /* SpotifyFloater */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3BB49FFE2DF690DE00432B57 /* Exceptions for "SpotifyFloater" folder in "SpotifyFloater" target */,
+			);
 			path = SpotifyFloater;
 			sourceTree = "<group>";
 		};
@@ -398,6 +411,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpotifyFloater/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -423,6 +437,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpotifyFloater/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
