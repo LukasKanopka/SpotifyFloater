@@ -29,7 +29,7 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(25) // More rounded corners
                 }
-                .frame(width: 300, height: 200) // Adjusted frame size
+                .frame(width: 360, height: 240) // Scaled up by 20%
                 .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
                 .cornerRadius(25) // Apply corner radius to the container
                 .shadow(radius: 10) // Add a subtle shadow

@@ -22,7 +22,7 @@ struct PlayerView: View {
                Image(nsImage: albumArt ?? NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)!)
                    .resizable()
                    .aspectRatio(contentMode: .fit)
-                   .frame(width: 60, height: 60) // Downscaled artwork
+                   .frame(width: 72, height: 72) // Scaled up by 20%
                    .cornerRadius(4) // Smaller corner radius
                    .shadow(radius: 3) // Smaller shadow
                
@@ -45,7 +45,7 @@ struct PlayerView: View {
                        
                        Button(action: { isPlaying ? authManager.performPlayerAction(endpoint: .pause) : authManager.performPlayerAction(endpoint: .play) }) {
                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                               .font(.title2) // Adjusted font size
+                               .font(.title) // Scaled up by 20%
                                .foregroundColor(Color(red: 0.11, green: 0.82, blue: 0.33)) // Spotify Green
                        }
                        
@@ -63,7 +63,7 @@ struct PlayerView: View {
                    Image(systemName: isFavorite ? "minus.circle.fill" : "plus.circle.fill") // Circular +/- icon
                        .foregroundColor(isFavorite ? Color(red: 0.11, green: 0.82, blue: 0.33) : .gray) // Spotify Green for favorited (minus), gray otherwise (plus)
                }
-               .font(.title2)
+               .font(.title) // Scaled up by 20%
 
            } else {
                Text("Nothing Playing")
@@ -73,7 +73,7 @@ struct PlayerView: View {
        }
        .padding(.horizontal, 20) // Add horizontal padding
        .padding(.vertical, 10) // Adjusted vertical padding for a slightly shorter pill
-       .frame(width: 300, height: 100) // Adjusted frame size for a long pill
+       .frame(width: 360, height: 120) // Scaled up by 20%
        .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
        .cornerRadius(50) // Apply corner radius for pill shape
        .shadow(radius: 10) // Add a subtle shadow
