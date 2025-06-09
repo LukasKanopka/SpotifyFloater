@@ -76,7 +76,7 @@ struct PlayerView: View {
        .frame(width: 360, height: 120) // Scaled up by 20%
        .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
        .cornerRadius(50) // Apply corner radius for pill shape
-       .shadow(radius: 10) // Add a subtle shadow
+       .shadow(radius: 20) // Increase shadow radius
        .clipShape(RoundedRectangle(cornerRadius: 50)) // Clip the shadow to the rounded shape
        .onAppear(perform: fetchCurrentTrack) // Fetch track when view appears
        .onReceive(timer) { _ in // And fetch track on a timer
