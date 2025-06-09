@@ -311,9 +311,10 @@ class SpotifyAuthManager: NSObject, ObservableObject {
         case previous = "/v1/me/player/previous"
     }
 
-    func performPlayerAction(endpoint: PlayerEndpoint) {
+    // UPDATED: Now includes a completion handler to report success or failure.
+    func performPlayerAction(endpoint: PlayerEndpoint, completion: @escaping (Error?) -> Void) {
         let method = (endpoint == .next || endpoint == .previous) ? "POST" : "PUT"
-        makeAPICallWithoutDecoding(endpoint: endpoint.rawValue, method: method) { _ in }
+        makeAPICallWithoutDecoding(endpoint: endpoint.rawValue, method: method, completion: completion)
     }
 
     func getCurrentTrack(completion: @escaping (Result<SpotifyTrackResponse, Error>) -> Void) {

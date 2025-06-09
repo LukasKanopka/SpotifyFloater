@@ -13,7 +13,8 @@ struct PlayerView: View {
     @State private var isFavorite: Bool = false
     
     // A timer to periodically fetch the latest track info
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    // Slow down the timer to reduce unnecessary background polling.
+    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
        HStack(spacing: 12) {
@@ -36,20 +37,29 @@ struct PlayerView: View {
                        .font(.caption)
                        .foregroundColor(.secondary)
                    
-                   HStack(spacing: 15) {
-                        // --- BUTTON STYLE REVAMP ---
-                       PlayerButton(systemName: "backward.fill") {
-                           authManager.performPlayerAction(endpoint: .previous)
-                       }
-                       
-                       PlayerButton(systemName: isPlaying ? "pause.fill" : "play.fill", fontSize: .title2) {
-                           isPlaying ? authManager.performPlayerAction(endpoint: .pause) : authManager.performPlayerAction(endpoint: .play)
-                       }
-                       
-                       PlayerButton(systemName: "forward.fill") {
-                           authManager.performPlayerAction(endpoint: .next)
-                       }
-                   }
+                  HStack(spacing: 15) {
+                      // Backward Button
+                      PlayerButton(systemName: "backward.fill") {
+                          authManager.performPlayerAction(endpoint: .previous) { error in
+                              if error == nil { self.fetchAfterAction() }
+                          }
+                      }
+                      
+                      // Play/Pause Button
+                      PlayerButton(systemName: isPlaying ? "pause.fill" : "play.fill", fontSize: .title2) {
+                          let endpoint: SpotifyAuthManager.PlayerEndpoint = isPlaying ? .pause : .play
+                          authManager.performPlayerAction(endpoint: endpoint) { error in
+                              if error == nil { self.fetchAfterAction() }
+                          }
+                      }
+                      
+                      // Forward Button
+                      PlayerButton(systemName: "forward.fill") {
+                          authManager.performPlayerAction(endpoint: .next) { error in
+                              if error == nil { self.fetchAfterAction() }
+                          }
+                      }
+                  }
                }
                
                // Spacer()
@@ -155,6 +165,13 @@ struct PlayerView: View {
                 print("Error fetching album art: \(error?.localizedDescription ?? "Unknown error")")
             }
         }.resume()
+    }
+    // Instantly fetches track info after a short delay to ensure
+    // Spotify's backend has processed the change.
+    private func fetchAfterAction() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.fetchCurrentTrack()
+        }
     }
 }
 
