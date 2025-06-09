@@ -39,6 +39,19 @@ struct SpotifyFloaterApp: App {
                })
        }
        .windowStyle(.hiddenTitleBar)
+       .commands {
+           CommandGroup(before: .help) { // Place custom commands before the Help menu
+               Button("Close Window") {
+                   NSApplication.shared.keyWindow?.close()
+               }
+               .keyboardShortcut("w", modifiers: .command)
+
+               Button("Quit SpotifyFloater") {
+                   NSApplication.shared.terminate(nil)
+               }
+               .keyboardShortcut("q", modifiers: .command)
+           }
+       }
    }
 }
 
