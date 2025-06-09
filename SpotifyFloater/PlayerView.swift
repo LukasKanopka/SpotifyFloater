@@ -31,12 +31,10 @@ struct PlayerView: View {
                        Text(track.name)
                            .font(.headline) // Song name
                            .fontWeight(.bold)
-                           .lineLimit(1)
                            .foregroundColor(.white) // Spotify theme text color
                        Text(track.artistNames)
                            .font(.caption) // Artist name
                            .foregroundColor(.gray) // Spotify theme secondary text color
-                           .lineLimit(1)
                    }
                    
                    HStack(spacing: 20) { // Player control buttons
@@ -58,7 +56,7 @@ struct PlayerView: View {
                    }
                }
                
-               Spacer() // Pushes content to the left, favorite button to the right
+            // Spacer(minLength: -20) // Use a smaller minimum length to reduce default spacing
                
                // Favorite button
                Button(action: toggleFavoriteStatus) {
@@ -75,7 +73,7 @@ struct PlayerView: View {
        }
        .padding(.horizontal, 20) // Add horizontal padding
        .padding(.vertical, 10) // Adjusted vertical padding for a slightly shorter pill
-       .frame(width: 350, height: 100) // Adjusted frame size for a long pill
+       .frame(width: 300, height: 100) // Adjusted frame size for a long pill
        .background(Color(red: 0.1, green: 0.1, blue: 0.1)) // Dark background color
        .cornerRadius(50) // Apply corner radius for pill shape
        .shadow(radius: 10) // Add a subtle shadow
